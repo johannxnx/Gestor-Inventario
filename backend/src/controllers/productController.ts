@@ -98,3 +98,56 @@ export const createProducto = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const updateProducto = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const { codigo, nombre, descripcion, precio, categoria } = req.body;
+
+  if (Number.isNaN(id)) {
+    return res.status(400).json({
+      message: "El id del producto debe ser un numero valido",
+    });
+  }
+
+  if (!codigo || !nombre || precio === undefined || !categoria) {
+    return res.status(400).json({
+      message: "Codigo, nombre, precio y categoria son obligatorios",
+    });
+  }
+
+  try {
+    const result = await new sql.Request()
+      .input("id", sql.Int, id)
+      .input("codigo", sql.VarChar(50), codigo)
+      .input("nombre", sql.VarChar(100), nombre)
+      .input("descripcion", sql.VarChar(255), descripcion || null)
+      .input("precio", sql.Decimal(10, 2), precio)
+      .input("categoria", sql.VarChar(100), categoria)
+      .query(`
+        UPDATE productos
+        SET
+          codigo = @codigo,
+          nombre = @nombre,
+          descripcion = @descripcion,
+          precio = @precio,
+          categoria = @categoria
+        WHERE id = @id
+      `);
+
+    if (result.rowsAffected[0] === 0) {
+      return res.status(404).json({
+        message: "Producto no encontrado",
+      });
+    }
+
+    res.json({
+      message: "Producto actualizado correctamente",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error actualizando producto",
+    });
+  }
+};

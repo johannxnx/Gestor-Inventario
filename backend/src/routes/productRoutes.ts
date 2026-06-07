@@ -3,6 +3,7 @@ import {
   createProducto,
   getProductoById,
   getProductos,
+  updateProducto,
 } from "../controllers/productController";
 
 const router = Router();
@@ -10,6 +11,7 @@ const router = Router();
 router.get("/productos", getProductos);
 router.get("/productos/:id", getProductoById);
 router.post("/productos", createProducto);
+router.put("/productos/:id", updateProducto);
 
 console.log("Rutas de productos cargadas");
 
