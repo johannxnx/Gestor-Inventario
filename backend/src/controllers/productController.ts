@@ -151,3 +151,38 @@ export const updateProducto = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const deleteProducto = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+
+  if (Number.isNaN(id)) {
+    return res.status(400).json({
+      message: "El id del producto debe ser un numero valido",
+    });
+  }
+
+  try {
+    const result = await new sql.Request()
+      .input("id", sql.Int, id)
+      .query(`
+        DELETE FROM productos
+        WHERE id = @id
+      `);
+
+    if (result.rowsAffected[0] === 0) {
+      return res.status(404).json({
+        message: "Producto no encontrado",
+      });
+    }
+
+    res.json({
+      message: "Producto eliminado correctamente",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error eliminando producto",
+    });
+  }
+};
