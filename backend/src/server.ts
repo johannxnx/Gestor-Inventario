@@ -1,36 +1,50 @@
 import express from "express";
 import cors from "cors";
+import session from "express-session";
 import dotenv from "dotenv";
 import { connectDB } from "./database/db";
 import productRoutes from "./routes/productRoutes";
+import authRoutes from "./routes/authRoutes";
+import { requireAuth } from "./middleware/authMiddleware";
 
-// Carga las variables del archivo .env para poder usar datos como PORT y credenciales de BD
 dotenv.config();
 
-// Se crea la aplicacion principal de Express
 const app = express();
 
-// Permite que el frontend pueda hacer peticiones al backend
-app.use(cors());
+// Permite que el frontend (Vite en puerto 5173) envíe y reciba cookies de sesión
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true,
+}));
 
-// Permite recibir datos en formato JSON desde Postman o desde el frontend
 app.use(express.json());
 
-// Se conecta a SQL Server antes de usar las rutas de la API
+// Configura el sistema de sesiones con cookie httpOnly para mayor seguridad
+app.use(session({
+  secret: process.env.SESSION_SECRET || "disagro-secret-dev",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false,     // Cambiar a true cuando se use HTTPS en producción
+    maxAge: 1000 * 60 * 60 * 8, // 8 horas
+  },
+}));
+
 connectDB();
 
-// Todas las rutas de productos van a empezar con /api
-app.use("/api", productRoutes);
+// Rutas públicas: login, logout y verificación de sesión
+app.use("/api/auth", authRoutes);
 
-// Ruta simple para comprobar que el servidor esta funcionando
+// Rutas protegidas: solo accesibles con sesión activa
+app.use("/api", requireAuth, productRoutes);
+
 app.get("/", (_req, res) => {
   res.send("API funcionando correctamente");
 });
 
-// Si no existe PORT en el .env, se usa el puerto 3001
 const PORT = process.env.PORT || 3001;
 
-// Levanta el servidor y muestra en consola la URL donde esta corriendo
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

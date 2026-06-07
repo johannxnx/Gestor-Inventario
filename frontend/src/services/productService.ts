@@ -1,7 +1,5 @@
-import axios from "axios";
+import api from "./axiosInstance";
 import { Producto, ProductoFormData } from "../interfaces/Producto";
-
-const API_URL = "http://localhost:3001/api/productos";
 
 const mapFormDataToProducto = (producto: ProductoFormData) => ({
   codigo: producto.codigo,
@@ -12,23 +10,23 @@ const mapFormDataToProducto = (producto: ProductoFormData) => ({
 });
 
 export const getProductos = async (): Promise<Producto[]> => {
-  const response = await axios.get<Producto[]>(API_URL);
+  const response = await api.get<Producto[]>("/productos");
   return response.data;
 };
 
 export const createProducto = async (
   producto: ProductoFormData
 ): Promise<void> => {
-  await axios.post(API_URL, mapFormDataToProducto(producto));
+  await api.post("/productos", mapFormDataToProducto(producto));
 };
 
 export const updateProducto = async (
   id: number,
   producto: ProductoFormData
 ): Promise<void> => {
-  await axios.put(`${API_URL}/${id}`, mapFormDataToProducto(producto));
+  await api.put(`/productos/${id}`, mapFormDataToProducto(producto));
 };
 
 export const deleteProducto = async (id: number): Promise<void> => {
-  await axios.delete(`${API_URL}/${id}`);
+  await api.delete(`/productos/${id}`);
 };
