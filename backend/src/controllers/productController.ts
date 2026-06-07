@@ -20,6 +20,40 @@ export const getProductos = async (
   }
 };
 
+export const getProductoById = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+
+  if (Number.isNaN(id)) {
+    return res.status(400).json({
+      message: "El id del producto debe ser un numero valido",
+    });
+  }
+
+  try {
+    const result = await new sql.Request()
+      .input("id", sql.Int, id)
+      .query(`
+        SELECT *
+        FROM productos
+        WHERE id = @id
+      `);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({
+        message: "Producto no encontrado",
+      });
+    }
+
+    res.json(result.recordset[0]);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error obteniendo producto",
+    });
+  }
+};
+
 export const createProducto = async (req: Request, res: Response) => {
   const { codigo, nombre, descripcion, precio, categoria } = req.body;
 
