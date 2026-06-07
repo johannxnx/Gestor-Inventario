@@ -1,8 +1,10 @@
 import sql from "mssql";
 import dotenv from "dotenv";
 
+// Carga las variables de entorno para no escribir credenciales directamente en el codigo
 dotenv.config();
 
+// Configuracion necesaria para conectarse a SQL Server
 const dbConfig: sql.config = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -11,11 +13,15 @@ const dbConfig: sql.config = {
   port: Number(process.env.DB_PORT) || 1433,
 
   options: {
+    // En local se deja encrypt en false para evitar problemas de certificados
     encrypt: false,
+
+    // Permite confiar en el certificado del servidor local de SQL Server
     trustServerCertificate: true,
   },
 };
 
+// Funcion que intenta abrir la conexion con SQL Server
 export const connectDB = async () => {
   try {
     await sql.connect(dbConfig);
@@ -25,4 +31,5 @@ export const connectDB = async () => {
   }
 };
 
+// Exporto sql para poder usarlo en los controladores y hacer consultas a la base de datos
 export default sql;
