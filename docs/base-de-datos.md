@@ -4,7 +4,11 @@
 
 Para esta prueba tecnica se utilizo SQL Server como motor de base de datos.
 
-El enunciado indica que el tipo y diseno de base de datos queda a criterio del desarrollador, por lo que se eligio SQL Server porque permite almacenar la informacion de los productos de forma estructurada, centralizada y porque ya se tenía familiaridad.
+El enunciado indica que el tipo y diseno de base de datos queda a criterio del desarrollador, por lo que se eligio una base de datos relacional.
+
+A mi criterio, una base de datos relacional era una buena opcion porque es con la que tengo mayor familiarizacion y se adaptaba mejor al manejo de un catalogo de productos.
+
+SQL Server permite almacenar la informacion de los productos de forma estructurada y centralizada.
 
 Tambien se tomaron nombres de productos y categorias de ejemplo, ya que el enunciado permite utilizar los nombres de servicios y productos que se deseen.
 
