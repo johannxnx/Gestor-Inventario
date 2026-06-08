@@ -99,15 +99,20 @@ export const ProductForm = ({
           />
         </label>
 
-        {/* Campo categoría */}
+        {/* Campo categoría: select con opciones fijas */}
         <label>
           Categoria
-          <input
+          <select
             value={formData.categoria}
             onChange={(event) => onChange("categoria", event.target.value)}
-            placeholder=""
             required
-          />
+          >
+            <option value="">Selecciona una categoria</option>
+            <option value="Teclados">Teclados</option>
+            <option value="Mouse">Mouse</option>
+            <option value="Laptop">Laptop</option>
+            <option value="Otro">Otro</option>
+          </select>
         </label>
       </div>
 

@@ -1,7 +1,7 @@
 /* ---- Login Page ---- */
 .login-shell {
   align-items: center;
-  background: linear-gradient(135deg, #0a3d22 0%, #1b7a47 100%);
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
   display: flex;
   justify-content: center;
   min-height: 100vh;
@@ -25,7 +25,7 @@
 }
 
 .login-brand-name {
-  color: #0f5132;
+  color: #1e3a5f;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -72,7 +72,7 @@
 
 /* ---- Navbar ---- */
 .navbar {
-  background: #0f5132;
+  background: #1e3a5f;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   position: sticky;
   top: 0;
@@ -165,9 +165,9 @@
 }
 
 .alert.success {
-  background: #dcf1de;
-  border-left: 4px solid #2f7d32;
-  color: #14451a;
+  background: #dbeafe;
+  border-left: 4px solid #2563eb;
+  color: #1e3a8a;
 }
 
 .alert.error {
@@ -246,7 +246,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   background: #f9fafb;
   border: 1.5px solid #d1d5db;
   border-radius: 8px;
@@ -260,10 +261,11 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   background: #ffffff;
-  border-color: #2f7d32;
-  box-shadow: 0 0 0 3px rgba(47, 125, 50, 0.14);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 textarea {
@@ -297,14 +299,14 @@ textarea {
 }
 
 .primary-button {
-  background: #2f7d32;
-  box-shadow: 0 1px 4px rgba(47, 125, 50, 0.3);
+  background: #2563eb;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.3);
   color: #ffffff;
 }
 
 .secondary-button {
-  background: #e8f4ea;
-  color: #1b5e20;
+  background: #eff6ff;
+  color: #1e40af;
 }
 
 .danger-button {
@@ -352,7 +354,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background: #f0faf1;
+  background: #eff6ff;
 }
 
 th:nth-child(1),
@@ -399,7 +401,7 @@ td:nth-child(6) {
 }
 
 .price-cell {
-  color: #0f5132;
+  color: #1e40af;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
@@ -419,9 +421,9 @@ td:nth-child(6) {
 
 /* ---- Category Badge ---- */
 .category-badge {
-  background: #e8f4ea;
+  background: #eff6ff;
   border-radius: 20px;
-  color: #1b5e20;
+  color: #1e40af;
   display: inline-block;
   font-size: 12px;
   font-weight: 600;
