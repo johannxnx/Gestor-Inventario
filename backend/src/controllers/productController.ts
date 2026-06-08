@@ -1,35 +1,45 @@
+// Importo los tipos de Express para que TypeScript no se queje
 import { Request, Response } from "express";
+
+// Importo la instancia de SQL Server para hacer consultas a la base de datos
 import sql from "../database/db";
 
-// Obtiene todos los productos guardados en la tabla productos
+// Controlador para obtener TODOS los productos de la base de datos
+// Se llama cuando el frontend hace GET /api/productos
 export const getProductos = async (
-  _req: Request,
+  _req: Request, // el guión bajo antes de req indica que no uso esa variable
   res: Response
 ) => {
   try {
-    // Esta consulta trae todos los registros de productos
+    // Hago una consulta simple para traer todos los registros de la tabla productos
     const result = await sql.query(`
       SELECT * FROM productos
     `);
 
-    // recordset contiene los datos que devuelve SQL Server
+    // result.recordset es el array con todos los productos que devolvió SQL Server
+    // Lo mando como JSON al frontend
     res.json(result.recordset);
   } catch (error) {
+    // Muestro el error en la consola del servidor para poder depurar
     console.error(error);
 
-    // Si algo falla, se responde con error 500.
+    // HTTP 500: algo falló dentro del servidor (no es culpa del cliente)
     res.status(500).json({
       message: "Error obteniendo productos",
     });
   }
 };
 
-// Obtiene un producto especifico usando el id que viene en la URL
+// Controlador para obtener UN solo producto usando su id
+// Se llama cuando el frontend hace GET /api/productos/5 (por ejemplo)
 export const getProductoById = async (req: Request, res: Response) => {
-  // req.params.id viene como texto, por eso se convierte a numero.
+  // req.params.id viene como texto (string) porque así viajan los parámetros en la URL
+  // Lo convierto a número porque en la base de datos el id es un entero
   const id = Number(req.params.id);
 
-  // Si el id no es numero, se responde con error 400.
+  // Si el texto no era un número válido, Number() devuelve NaN (Not a Number)
+  // En ese caso, devuelvo un error al cliente antes de ir a la base de datos
+  // HTTP 400: el cliente mandó una petición incorrecta
   if (Number.isNaN(id)) {
     return res.status(400).json({
       message: "El id del producto debe ser un numero valido",
@@ -37,7 +47,8 @@ export const getProductoById = async (req: Request, res: Response) => {
   }
 
   try {
-    // Se usa input para enviar el id como parametro y evitar SQL injection
+    // Uso .input() para pasar el id como parámetro seguro
+    // Si concatenara directamente el id en el SQL, sería vulnerable a SQL Injection
     const result = await new sql.Request()
       .input("id", sql.Int, id)
       .query(`
@@ -46,14 +57,15 @@ export const getProductoById = async (req: Request, res: Response) => {
         WHERE id = @id
       `);
 
-    // Si no hay registros, significa que no existe un producto con ese id
+    // Si recordset está vacío, no existe ningún producto con ese id
+    // HTTP 404: el recurso que buscan no existe
     if (result.recordset.length === 0) {
       return res.status(404).json({
         message: "Producto no encontrado",
       });
     }
 
-    // Como se busca por id, solo se devuelve el primer producto encontrado
+    // Como busqué por id (que es único), solo puede haber uno, tomo el primero
     res.json(result.recordset[0]);
   } catch (error) {
     console.error(error);
@@ -64,12 +76,16 @@ export const getProductoById = async (req: Request, res: Response) => {
   }
 };
 
-// Crea un nuevo producto con los datos enviados en el body
+// Controlador para CREAR un nuevo producto
+// Se llama cuando el frontend hace POST /api/productos con los datos del formulario
 export const createProducto = async (req: Request, res: Response) => {
-  // Se obtienen los campos que envia el cliente en formato JSON.
+  // Desestructuro el body de la petición para sacar los campos del formulario
+  // req.body contiene lo que el frontend mandó en formato JSON
   const { codigo, nombre, descripcion, precio, categoria } = req.body;
 
-  // Validacion basica para que no se guarden productos incompletos.
+  // Validación: los campos obligatorios no pueden estar vacíos
+  // descripcion no está aquí porque es opcional
+  // precio === undefined lo chequeo así porque 0 es un precio válido
   if (!codigo || !nombre || precio === undefined || !categoria) {
     return res.status(400).json({
       message: "Codigo, nombre, precio y categoria son obligatorios",
@@ -77,7 +93,9 @@ export const createProducto = async (req: Request, res: Response) => {
   }
 
   try {
-    // Se insertan los datos usando parametros para que la consulta sea mas segura
+    // Hago el INSERT usando parámetros para cada campo
+    // sql.VarChar(50) le dice a mssql el tipo y tamaño del parámetro en SQL Server
+    // Si descripcion no viene, guardo null en la base de datos (está permitido)
     await new sql.Request()
       .input("codigo", sql.VarChar(50), codigo)
       .input("nombre", sql.VarChar(100), nombre)
@@ -101,7 +119,8 @@ export const createProducto = async (req: Request, res: Response) => {
         )
       `);
 
-    // Si el insert fue correcto, se responde con estado 201
+    // HTTP 201: "Created", se usa cuando algo se creó exitosamente
+    // Es más específico que el 200, indica que se creó un recurso nuevo
     res.status(201).json({
       message: "Producto creado correctamente",
     });
@@ -114,20 +133,21 @@ export const createProducto = async (req: Request, res: Response) => {
   }
 };
 
-// Actualiza un producto existente usando el id de la URL
+// Controlador para MODIFICAR un producto existente
+// Se llama cuando el frontend hace PUT /api/productos/5 con los datos actualizados
 export const updateProducto = async (req: Request, res: Response) => {
-  // Se obtiene el id desde la ruta y los datos nuevos desde el body.
+  // El id viene en la URL (/api/productos/:id) y los datos nuevos vienen en el body
   const id = Number(req.params.id);
   const { codigo, nombre, descripcion, precio, categoria } = req.body;
 
-  // Valida que el id sea un numero valido
+  // Verifico que el id sea un número válido
   if (Number.isNaN(id)) {
     return res.status(400).json({
       message: "El id del producto debe ser un numero valido",
     });
   }
 
-  // Valida que los campos principales vengan completos
+  // Verifico que los campos obligatorios vengan completos
   if (!codigo || !nombre || precio === undefined || !categoria) {
     return res.status(400).json({
       message: "Codigo, nombre, precio y categoria son obligatorios",
@@ -135,7 +155,8 @@ export const updateProducto = async (req: Request, res: Response) => {
   }
 
   try {
-    // Actualiza el producto usando parametros para proteger la consulta
+    // Hago el UPDATE con todos los campos usando parámetros seguros
+    // El WHERE id = @id asegura que solo se modifique ESE producto
     const result = await new sql.Request()
       .input("id", sql.Int, id)
       .input("codigo", sql.VarChar(50), codigo)
@@ -154,14 +175,15 @@ export const updateProducto = async (req: Request, res: Response) => {
         WHERE id = @id
       `);
 
-    // rowsAffected indica cuantas filas fueron modificadas
+    // rowsAffected[0] indica cuántas filas fueron modificadas por el UPDATE
+    // Si es 0, significa que no existía ningún producto con ese id
     if (result.rowsAffected[0] === 0) {
       return res.status(404).json({
         message: "Producto no encontrado",
       });
     }
 
-    // Si se actualizo una fila, se confirma al cliente
+    // Si se modificó al menos una fila, el update fue exitoso
     res.json({
       message: "Producto actualizado correctamente",
     });
@@ -174,12 +196,13 @@ export const updateProducto = async (req: Request, res: Response) => {
   }
 };
 
-// Elimina un producto usando el id que viene en la URL
+// Controlador para ELIMINAR un producto
+// Se llama cuando el frontend hace DELETE /api/productos/5
 export const deleteProducto = async (req: Request, res: Response) => {
-  // El id viene como string, por eso se convierte a numero.
+  // El id del producto a eliminar viene en la URL
   const id = Number(req.params.id);
 
-  // Si no es numero, se devuelve error 400
+  // Siempre valido que el id sea un número antes de ir a la base de datos
   if (Number.isNaN(id)) {
     return res.status(400).json({
       message: "El id del producto debe ser un numero valido",
@@ -187,7 +210,8 @@ export const deleteProducto = async (req: Request, res: Response) => {
   }
 
   try {
-    // Se elimina usando un parametro para evitar concatenar valores en el SQL
+    // Hago el DELETE usando un parámetro para el id
+    // El @id evita que alguien pueda inyectar SQL malicioso en la URL
     const result = await new sql.Request()
       .input("id", sql.Int, id)
       .query(`
@@ -195,14 +219,14 @@ export const deleteProducto = async (req: Request, res: Response) => {
         WHERE id = @id
       `);
 
-    // Si no se afecto ninguna fila, el producto no existia
+    // Si rowsAffected[0] es 0, no había ningún producto con ese id
     if (result.rowsAffected[0] === 0) {
       return res.status(404).json({
         message: "Producto no encontrado",
       });
     }
 
-    // Respuesta cuando el producto se elimino correctamente
+    // Producto eliminado correctamente
     res.json({
       message: "Producto eliminado correctamente",
     });

@@ -1,9 +1,6 @@
 ## Diagrama de Arquitectura General
 
-![Arquitectura General](img/ArquitecturaGeneral.png)
-
-
-Este diagrama muestra la arquitectura general de la aplicacion para administrar el catalogo de productos de DISAGRO.
+Este diagrama muestra la arquitectura general de la aplicacion para administrar catalogo de productos.
 
 La aplicacion se divide en tres partes principales:
 
@@ -13,152 +10,246 @@ La aplicacion se divide en tres partes principales:
 
 El flujo principal es el siguiente:
 
-```txt
-Usuario -> Frontend -> Backend -> Base de datos
-```
+![Diagrama de arquitectura general](img/inventarioarqui.png)
+
+---
 
 ## Usuario
 
-El usuario es la persona que va a utilizar la aplicacion web.
+El usuario es la persona que va a utilizar la aplicacion web desde el navegador.
 
-Desde la pantalla principal podra consultar el listado de productos, crear productos nuevos y eliminar productos que ya no se comercialicen.
+Antes de poder usar la aplicacion debe iniciar sesion con su usuario y contrasena. Una vez autenticado puede:
+
+- Consultar el listado de productos
+- Crear productos nuevos
+- Editar productos existentes
+- Eliminar productos del catalogo
+- Cerrar sesion
+
+---
 
 ## Frontend
 
-El frontend es la parte visual de la aplicacion, es decir, lo que el usuario ve y utiliza en el navegador.
+El frontend es la parte visual de la aplicacion, lo que el usuario ve y utiliza en el navegador.
 
-Para esta parte se utilizara:
-
-```txt
-React + TypeScript
-```
-
-El frontend tendra una pantalla para mostrar el listado de productos y un formulario para crear nuevos productos.
-
-Tambien tendra opciones para eliminar productos del catalogo.
-
-El frontend no se conecta directamente a la base de datos. En su lugar, se comunica con el backend por medio de peticiones HTTP enviando y recibiendo informacion en formato JSON.
-
-Ejemplos de peticiones:
+**Tecnologias utilizadas:**
 
 ```txt
-GET /listado
-GET /producto
-POST /crear
-PUT /modificar
-DELETE /eliminar
+React 19 + TypeScript + Vite
 ```
+
+### Estructura de páginas y componentes
+
+```txt
+App.tsx
+├── LoginPage.tsx          (se muestra si no hay sesion activa)
+└── ProductsPage.tsx       (se muestra si hay sesion activa)
+    ├── ProductForm.tsx    (formulario para crear o editar un producto)
+    └── ProductTable.tsx   (tabla con el listado de productos)
+```
+
+### Servicios (comunicacion con el backend)
+
+```txt
+axiosInstance.ts     configuracion de axios con cookies habilitadas
+authService.ts       login, logout, verificacion de sesion
+productService.ts    CRUD de productos
+```
+
+El frontend se comunica con el backend por medio de peticiones HTTP enviando y recibiendo informacion en formato JSON. Todas las peticiones incluyen la cookie de sesion gracias a `withCredentials: true` en axios.
+
+### Endpoints que consume el frontend
+
+```txt
+POST   /api/auth/login       inicia sesion
+POST   /api/auth/logout      cierra sesion
+GET    /api/auth/me          verifica si hay sesion activa
+
+GET    /api/productos         lista todos los productos
+GET    /api/productos/:id     obtiene un producto por id
+POST   /api/productos         crea un producto nuevo
+PUT    /api/productos/:id     actualiza un producto existente
+DELETE /api/productos/:id     elimina un producto
+```
+
+---
 
 ## Backend
 
 El backend es la parte encargada de recibir las peticiones del frontend, procesarlas y comunicarse con la base de datos.
 
-Para esta parte se utilizara:
+**Tecnologias utilizadas:**
 
 ```txt
-Node.js + Express + TypeScript
+Node.js + Express 5 + TypeScript
+express-session  (manejo de sesiones)
+bcryptjs         (hashing de contraseñas)
+mssql            (conector para SQL Server)
 ```
 
-El backend estara organizado en tres capas principales:
+El backend esta organizado en cuatro capas:
 
-### Routes
+### Routes (Rutas)
 
-Las rutas definen los endpoints de la API.
-
-Por ejemplo:
+Las rutas definen los endpoints disponibles de la API y las conectan con sus controladores.
 
 ```txt
-POST /crear
-PUT /modificar
-DELETE /eliminar
-GET /producto
-GET /listado
+authRoutes.ts       rutas publicas de autenticacion (/api/auth)
+productRoutes.ts    rutas protegidas de productos   (/api/productos)
 ```
 
-Estas rutas indican que acciones puede realizar el frontend.
+### Middleware
 
-### Controllers
+El middleware se ejecuta entre que llega la peticion y llega al controlador.
 
-Los controladores reciben las peticiones que llegan a cada ruta.
+```txt
+requireAuth     verifica que haya sesion activa antes de permitir acceso
+                a las rutas de productos; si no hay sesion responde 401
+```
 
-Su responsabilidad es tomar los datos enviados por el frontend, llamar a la logica correspondiente y devolver una respuesta.
+Las rutas de autenticacion (`/api/auth`) son publicas y no pasan por `requireAuth`.
+Las rutas de productos (`/api/productos`) si pasan por `requireAuth`.
 
-Por ejemplo, si el usuario quiere crear un producto, el controlador recibe los datos del producto y llama al servicio encargado de guardarlo.
+### Controllers (Controladores)
 
-### Services
+Los controladores reciben las peticiones, validan los datos, ejecutan la consulta SQL y devuelven la respuesta.
 
-Los servicios contienen la logica principal de la aplicacion.
+```txt
+authController.ts      login, logout, getMe
+productController.ts   getProductos, getProductoById, createProducto,
+                       updateProducto, deleteProducto
+```
 
-En esta capa se manejan acciones como:
+Todos los controladores usan consultas parametrizadas (`.input()`) para evitar SQL Injection.
 
-- Crear un producto
-- Modificar un producto
-- Eliminar un producto
-- Buscar un producto
-- Listar todos los productos
+### Database
 
-Separar la logica en servicios ayuda a que el backend sea mas ordenado y facil de mantener.
+```txt
+db.ts    abre y exporta la conexion con SQL Server
+         la configuracion viene del archivo .env
+```
+
+---
 
 ## Base de datos
 
-La base de datos es donde se guarda la informacion de los productos.
+La base de datos almacena los productos y los usuarios del sistema.
 
-Para esta prueba se propone utilizar:
-
-```txt
-PostgreSQL
-```
-
-Cada producto debe tener las siguientes propiedades:
+**Motor utilizado:**
 
 ```txt
-Codigo
-Nombre
-Descripcion
-Precio
-Categorias
+SQL Server
+Servidor: localhost
+BD:       GestorInventario
 ```
 
-La base de datos permite que la informacion quede almacenada de forma centralizada y no dependa de hojas de calculo manuales.
+### Tabla `productos`
+
+```sql
+CREATE TABLE productos (
+    id          INT PRIMARY KEY IDENTITY(1,1),
+    codigo      VARCHAR(50)    NOT NULL,
+    nombre      VARCHAR(100)   NOT NULL,
+    descripcion VARCHAR(255),
+    precio      DECIMAL(10,2)  NOT NULL,
+    categoria   VARCHAR(100)   NOT NULL,
+    created_at  DATETIME       DEFAULT GETDATE()
+);
+```
+
+### Tabla `usuarios`
+
+```sql
+CREATE TABLE usuarios (
+    id            INT PRIMARY KEY IDENTITY(1,1),
+    usuario       NVARCHAR(50)   NOT NULL UNIQUE,
+    password_hash NVARCHAR(255)  NOT NULL,
+    created_at    DATETIME       DEFAULT GETDATE()
+);
+```
+
+
+---
+
+## Flujo de autenticacion (login)
+
+```txt
+1. El usuario ingresa su usuario y contrasena en LoginPage.
+2. El frontend envia POST /api/auth/login con las credenciales.
+3. El backend busca el usuario en la tabla usuarios.
+4. bcrypt compara la contrasena ingresada con el hash guardado.
+5. Si coinciden, el backend guarda userId y usuario en la sesion del servidor.
+6. El servidor envia una cookie (connect.sid) al navegador.
+7. El frontend recibe el nombre de usuario y muestra la app.
+```
+
+## Flujo de verificacion de sesion (al recargar la pagina)
+
+```txt
+1. El frontend carga y llama a GET /api/auth/me.
+2. El navegador envia automaticamente la cookie de sesion.
+3. El backend verifica que la cookie corresponda a una sesion valida.
+4. Si es valida, responde con el nombre de usuario.
+5. El frontend muestra la app directamente sin pedir login.
+6. Si no es valida, responde 401 y el frontend muestra el login.
+```
 
 ## Flujo para listar productos
 
-El flujo para mostrar productos en pantalla seria:
-
 ```txt
-1. El usuario entra a la pagina de productos.
-2. El frontend solicita la informacion al backend usando GET /listado.
-3. El backend recibe la peticion.
-4. El backend consulta los productos en PostgreSQL.
-5. PostgreSQL devuelve los datos encontrados.
+1. El usuario entra a la pagina de productos (ya autenticado).
+2. El frontend envia GET /api/productos con la cookie de sesion.
+3. requireAuth verifica que la sesion sea valida.
+4. productController consulta SELECT * FROM productos en SQL Server.
+5. SQL Server devuelve el array de productos.
 6. El backend responde al frontend en formato JSON.
-7. El frontend muestra el listado de productos en pantalla.
+7. El frontend muestra el listado en ProductTable.
 ```
 
 ## Flujo para crear un producto
 
-El flujo para crear un producto seria:
+```txt
+1. El usuario llena el formulario en ProductForm y hace submit.
+2. El frontend envia POST /api/productos con los datos en el body.
+3. requireAuth verifica la sesion.
+4. productController valida que los campos obligatorios esten presentes.
+5. Se ejecuta INSERT INTO productos con los datos parametrizados.
+6. SQL Server confirma la insercion.
+7. El backend responde con HTTP 201 (Created).
+8. El frontend limpia el formulario y recarga el listado.
+```
+
+## Flujo para editar un producto
 
 ```txt
-1. El usuario llena el formulario de producto.
-2. El frontend envia los datos al backend usando POST /crear.
-3. El backend recibe y procesa la informacion.
-4. El backend guarda el producto en PostgreSQL.
-5. La base de datos confirma que el producto fue guardado.
-6. El backend responde al frontend.
-7. El frontend actualiza el listado de productos.
+1. El usuario hace click en "Editar" en la tabla.
+2. El frontend carga los datos del producto en ProductForm.
+3. El usuario modifica los campos y hace submit.
+4. El frontend envia PUT /api/productos/:id con los datos actualizados.
+5. requireAuth verifica la sesion.
+6. productController ejecuta UPDATE productos WHERE id = @id.
+7. El backend responde con HTTP 200.
+8. El frontend recarga el listado.
 ```
 
 ## Flujo para eliminar un producto
 
-El flujo para eliminar un producto seria:
+```txt
+1. El usuario hace click en "Eliminar" en la tabla.
+2. El frontend muestra una confirmacion con window.confirm().
+3. Si el usuario confirma, el frontend envia DELETE /api/productos/:id.
+4. requireAuth verifica la sesion.
+5. productController ejecuta DELETE FROM productos WHERE id = @id.
+6. El backend responde con HTTP 200.
+7. El frontend recarga el listado.
+```
+
+## Flujo de cierre de sesion (logout)
 
 ```txt
-1. El usuario selecciona un producto para eliminar.
-2. El frontend envia la solicitud al backend usando DELETE /eliminar.
-3. El backend recibe la solicitud.
-4. El backend elimina el producto en PostgreSQL.
-5. La base de datos confirma la eliminacion.
-6. El backend responde al frontend.
-7. El frontend actualiza el listado de productos.
+1. El usuario hace click en "Cerrar sesion" en la navbar.
+2. El frontend envia POST /api/auth/logout.
+3. El backend destruye la sesion en el servidor.
+4. El backend borra la cookie connect.sid del navegador.
+5. El frontend limpia el estado local y muestra el login.
 ```
