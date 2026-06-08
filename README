@@ -1,0 +1,14 @@
+<div align="center">
+
+# GESTOR PARA INVENTARIO
+</div>
+
+
+#### NOMBRE COMPLETO
+
+
+**Johan Moises Cardona Rosales**    
+---
+
+
+Sistema de Gestión que permite a los usuarios visualizar el listado de productos disponibles, agregar nuevos productos al catálogo y eliminar, todo esto viendose reflejado de una forma dinámica.
