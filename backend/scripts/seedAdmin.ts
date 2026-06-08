@@ -19,8 +19,8 @@ const seedAdmin = async () => {
   // Hasheo la contraseña antes de guardarla
   const hash = await bcrypt.hash("admin123", 10);
 
-  // Inserto el admin solo si no existe (ON CONFLICT DO NOTHING es el equivalente
-  // al IF NOT EXISTS de SQL Server, usando la restricción UNIQUE del campo usuario)
+  // Inserto el admin solo si no existe: ON CONFLICT DO NOTHING evita el error
+  // si el usuario ya existe, gracias a la restricción UNIQUE del campo usuario
   await pool.query(
     `INSERT INTO usuarios (usuario, password_hash)
      VALUES ($1, $2)

@@ -10,7 +10,7 @@ La aplicacion se divide en tres partes principales:
 
 El flujo principal es el siguiente:
 
-![Diagrama de arquitectura general](img/inventarioarqui.png)
+![Diagrama de arquitectura general](img/inventarioarqui2.png)
 
 ---
 

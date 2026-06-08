@@ -21,8 +21,8 @@ export const login = async (req: Request, res: Response) => {
   }
 
   try {
-    // En PostgreSQL los parámetros se pasan con $1, $2, etc. en lugar de @nombre
-    // Esto evita SQL Injection de la misma forma que mssql
+    // En PostgreSQL los parámetros se pasan con $1, $2, etc.
+    // El driver los trata como datos, no como parte de la consulta, evitando SQL Injection
     const result = await pool.query(
       "SELECT * FROM usuarios WHERE usuario = $1",
       [usuario]

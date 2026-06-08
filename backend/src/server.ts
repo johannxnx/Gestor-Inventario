@@ -15,7 +15,7 @@ import session from "express-session";
 // Así no tengo que escribir contraseñas o claves secretas directamente en el código
 import dotenv from "dotenv";
 
-// Importo la función que abre la conexión con la base de datos SQL Server
+// Importo la función que abre la conexión con PostgreSQL
 import { connectDB } from "./database/db";
 
 // Importo el archivo de rutas de productos (CRUD)

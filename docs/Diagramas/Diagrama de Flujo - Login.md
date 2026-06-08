@@ -58,7 +58,7 @@ flowchart TD
 
     C -- Si hay userId --> F[La peticion pasa\nal controlador]
     F --> G[productController\nejenta la consulta SQL]
-    G --> H[SQL Server devuelve\nlos datos]
+    G --> H[PostgreSQL devuelve\nlos datos]
     H --> I[Backend responde\ncon JSON]
     I --> J([Frontend actualiza la UI])
 ```

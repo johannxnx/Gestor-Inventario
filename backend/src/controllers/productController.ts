@@ -24,7 +24,7 @@ export const getProductoById = async (req: Request, res: Response) => {
   }
 
   try {
-    // $1 es el primer parámetro, reemplaza al @id de mssql
+    // $1 es el primer parámetro posicional de PostgreSQL
     const result = await pool.query(
       "SELECT * FROM productos WHERE id = $1",
       [id]
