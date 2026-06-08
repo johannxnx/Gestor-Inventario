@@ -8,7 +8,7 @@
 
 ---
 
-Aplicacion web full-stack para administrar el catalogo de productos. Permite a usuarios autenticados consultar, crear, editar y eliminar productos desde una interfaz web con sesion persistente.
+Aplicacion web para administrar el catalogo de productos. Permite a usuarios autenticados consultar, crear, editar y eliminar productos desde una interfaz web con sesion persistente.
 
 ---
 
