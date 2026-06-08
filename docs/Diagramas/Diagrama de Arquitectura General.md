@@ -84,7 +84,7 @@ El backend es la parte encargada de recibir las peticiones del frontend, procesa
 Node.js + Express 5 + TypeScript
 express-session  (manejo de sesiones)
 bcryptjs         (hashing de contraseñas)
-mssql            (conector para SQL Server)
+pg               (conector para PostgreSQL)
 ```
 
 El backend esta organizado en cuatro capas:
@@ -120,12 +120,12 @@ productController.ts   getProductos, getProductoById, createProducto,
                        updateProducto, deleteProducto
 ```
 
-Todos los controladores usan consultas parametrizadas (`.input()`) para evitar SQL Injection.
+Todos los controladores usan consultas parametrizadas con `$1`, `$2`, `$3`... para evitar SQL Injection.
 
 ### Database
 
 ```txt
-db.ts    abre y exporta la conexion con SQL Server
+db.ts    abre y exporta la conexion con PostgreSQL mediante un Pool
          la configuracion viene del archivo .env
 ```
 
@@ -138,22 +138,22 @@ La base de datos almacena los productos y los usuarios del sistema.
 **Motor utilizado:**
 
 ```txt
-SQL Server
+PostgreSQL
 Servidor: localhost
-BD:       GestorInventario
+BD:       gestorinventario
 ```
 
 ### Tabla `productos`
 
 ```sql
 CREATE TABLE productos (
-    id          INT PRIMARY KEY IDENTITY(1,1),
+    id          SERIAL PRIMARY KEY,
     codigo      VARCHAR(50)    NOT NULL,
     nombre      VARCHAR(100)   NOT NULL,
     descripcion VARCHAR(255),
     precio      DECIMAL(10,2)  NOT NULL,
     categoria   VARCHAR(100)   NOT NULL,
-    created_at  DATETIME       DEFAULT GETDATE()
+    created_at  TIMESTAMP      DEFAULT NOW()
 );
 ```
 
@@ -161,10 +161,10 @@ CREATE TABLE productos (
 
 ```sql
 CREATE TABLE usuarios (
-    id            INT PRIMARY KEY IDENTITY(1,1),
-    usuario       NVARCHAR(50)   NOT NULL UNIQUE,
-    password_hash NVARCHAR(255)  NOT NULL,
-    created_at    DATETIME       DEFAULT GETDATE()
+    id            SERIAL PRIMARY KEY,
+    usuario       VARCHAR(50)    NOT NULL UNIQUE,
+    password_hash VARCHAR(255)   NOT NULL,
+    created_at    TIMESTAMP      DEFAULT NOW()
 );
 ```
 
@@ -200,8 +200,8 @@ CREATE TABLE usuarios (
 1. El usuario entra a la pagina de productos (ya autenticado).
 2. El frontend envia GET /api/productos con la cookie de sesion.
 3. requireAuth verifica que la sesion sea valida.
-4. productController consulta SELECT * FROM productos en SQL Server.
-5. SQL Server devuelve el array de productos.
+4. productController consulta SELECT * FROM productos en PostgreSQL.
+5. PostgreSQL devuelve el array de productos en result.rows.
 6. El backend responde al frontend en formato JSON.
 7. El frontend muestra el listado en ProductTable.
 ```
@@ -213,8 +213,8 @@ CREATE TABLE usuarios (
 2. El frontend envia POST /api/productos con los datos en el body.
 3. requireAuth verifica la sesion.
 4. productController valida que los campos obligatorios esten presentes.
-5. Se ejecuta INSERT INTO productos con los datos parametrizados.
-6. SQL Server confirma la insercion.
+5. Se ejecuta INSERT INTO productos con los datos parametrizados ($1, $2...).
+6. PostgreSQL confirma la insercion.
 7. El backend responde con HTTP 201 (Created).
 8. El frontend limpia el formulario y recarga el listado.
 ```
@@ -227,7 +227,7 @@ CREATE TABLE usuarios (
 3. El usuario modifica los campos y hace submit.
 4. El frontend envia PUT /api/productos/:id con los datos actualizados.
 5. requireAuth verifica la sesion.
-6. productController ejecuta UPDATE productos WHERE id = @id.
+6. productController ejecuta UPDATE productos WHERE id = $6.
 7. El backend responde con HTTP 200.
 8. El frontend recarga el listado.
 ```
@@ -239,7 +239,7 @@ CREATE TABLE usuarios (
 2. El frontend muestra una confirmacion con window.confirm().
 3. Si el usuario confirma, el frontend envia DELETE /api/productos/:id.
 4. requireAuth verifica la sesion.
-5. productController ejecuta DELETE FROM productos WHERE id = @id.
+5. productController ejecuta DELETE FROM productos WHERE id = $1.
 6. El backend responde con HTTP 200.
 7. El frontend recarga el listado.
 ```

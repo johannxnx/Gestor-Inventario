@@ -13,7 +13,7 @@ El Gestor de Inventario es una aplicacion web full-stack para administrar el cat
 |-------------|-------------------------------------------------|
 | Frontend    | React 19, TypeScript, Vite                      |
 | Backend     | Node.js, Express 5, TypeScript                  |
-| Base de datos | SQL Server                                    |
+| Base de datos | PostgreSQL                                    |
 | Autenticacion | express-session, bcryptjs                    |
 | HTTP Client | Axios (con withCredentials para cookies)        |
 
@@ -25,7 +25,7 @@ El Gestor de Inventario es una aplicacion web full-stack para administrar el cat
 
 - **Node.js** v18 o superior
 - **npm** v9 o superior
-- **SQL Server** (local o remoto) con la base de datos `GestorInventario` creada
+- **PostgreSQL** (local o remoto) con la base de datos `gestorinventario` creada
 - Sistema operativo: Windows, macOS o Linux
 
 ### Verificar versiones instaladas
@@ -47,7 +47,7 @@ Gestor-Inventario/
 │   │   │   ├── authController.ts       login, logout, getMe
 │   │   │   └── productController.ts    CRUD de productos
 │   │   ├── database/
-│   │   │   └── db.ts                   conexion a SQL Server
+│   │   │   └── db.ts                   conexion a PostgreSQL (Pool)
 │   │   ├── middleware/
 │   │   │   └── authMiddleware.ts       requireAuth (protege rutas)
 │   │   └── routes/
@@ -97,32 +97,30 @@ Gestor-Inventario/
 
 ### 1. Crear la base de datos
 
-Ejecutar en SQL Server Management Studio o cualquier cliente SQL:
+Ejecutar en pgAdmin o cualquier cliente PostgreSQL:
 
 ```sql
-CREATE DATABASE GestorInventario;
+CREATE DATABASE gestorinventario;
 ```
 
 ### 2. Crear las tablas
 
 ```sql
-USE GestorInventario;
-
 CREATE TABLE productos (
-    id          INT PRIMARY KEY IDENTITY(1,1),
+    id          SERIAL PRIMARY KEY,
     codigo      VARCHAR(50)    NOT NULL,
     nombre      VARCHAR(100)   NOT NULL,
     descripcion VARCHAR(255),
     precio      DECIMAL(10,2)  NOT NULL,
     categoria   VARCHAR(100)   NOT NULL,
-    created_at  DATETIME       DEFAULT GETDATE()
+    created_at  TIMESTAMP      DEFAULT NOW()
 );
 
 CREATE TABLE usuarios (
-    id            INT PRIMARY KEY IDENTITY(1,1),
-    usuario       NVARCHAR(50)   NOT NULL UNIQUE,
-    password_hash NVARCHAR(255)  NOT NULL,
-    created_at    DATETIME       DEFAULT GETDATE()
+    id            SERIAL PRIMARY KEY,
+    usuario       VARCHAR(50)    NOT NULL UNIQUE,
+    password_hash VARCHAR(255)   NOT NULL,
+    created_at    TIMESTAMP      DEFAULT NOW()
 );
 ```
 
@@ -142,13 +140,14 @@ cd Gestor-Inventario
 Crear el archivo `backend/.env` con el siguiente contenido:
 
 ```env
-DB_USER=tu_usuario_sql
-DB_PASSWORD=tu_contrasena_sql
+DB_USER=postgres
+DB_PASSWORD=tu_contrasena_postgres
 DB_SERVER=localhost
-DB_NAME=GestorInventario
-DB_PORT=1433
+DB_NAME=gestorinventario
+DB_PORT=5432
 
 SESSION_SECRET=una_clave_secreta_larga_y_aleatoria
+FRONTEND_URL=http://localhost:5173
 ```
 
 > `SESSION_SECRET` debe ser un string largo y aleatorio. En produccion nunca usar valores predecibles.
@@ -268,7 +267,7 @@ Se utiliza `express-session` en lugar de JWT por ser un sistema interno sin nece
 
 ### Seguridad en consultas SQL
 
-Todos los controladores usan consultas parametrizadas con `.input()` de `mssql` para evitar SQL Injection. Nunca se concatenan valores del usuario directamente en el SQL.
+Todos los controladores usan consultas parametrizadas con `$1`, `$2`, `$3`... del driver `pg` para evitar SQL Injection. Nunca se concatenan valores del usuario directamente en el SQL.
 
 ### Contrasenas
 
@@ -286,15 +285,15 @@ El backend configura CORS con `credentials: true` y `origin` especifico (no `*`)
 
 ## Variables de entorno — referencia completa
 
-| Variable        | Descripcion                              | Valor por defecto   |
-|-----------------|------------------------------------------|---------------------|
-| `DB_USER`       | Usuario de SQL Server                    | —                   |
-| `DB_PASSWORD`   | Contrasena del usuario de SQL Server     | —                   |
-| `DB_SERVER`     | Direccion del servidor SQL Server        | `localhost`         |
-| `DB_NAME`       | Nombre de la base de datos               | —                   |
-| `DB_PORT`       | Puerto de SQL Server                     | `1433`              |
-| `SESSION_SECRET`| Clave para firmar las cookies de sesion  | `disagro-secret-dev`|
-| `PORT`          | Puerto en el que corre el backend        | `3001`              |
+| Variable        | Descripcion                              | Valor por defecto       |
+|-----------------|------------------------------------------|-------------------------|
+| `DB_USER`       | Usuario de PostgreSQL                    | —                       |
+| `DB_PASSWORD`   | Contrasena del usuario de PostgreSQL     | —                       |
+| `DB_SERVER`     | Direccion del servidor PostgreSQL        | `localhost`             |
+| `DB_NAME`       | Nombre de la base de datos               | —                       |
+| `DB_PORT`       | Puerto de PostgreSQL                     | `5432`                  |
+| `SESSION_SECRET`| Clave para firmar las cookies de sesion  | —                       |
+| `PORT`          | Puerto en el que corre el backend        | `3001`                  |
 | `FRONTEND_URL`  | URL del frontend para la config de CORS  | `http://localhost:5173` |
 
 ---
@@ -304,5 +303,5 @@ El backend configura CORS con `credentials: true` y `origin` especifico (no `*`)
 - Cambiar `secure: false` a `secure: true` en la configuracion de la cookie (requiere HTTPS)
 - Usar un `SESSION_SECRET` largo y aleatorio generado de forma segura
 - Configurar `FRONTEND_URL` con el dominio real del frontend
-- Considerar usar un almacenamiento de sesiones persistente (como `connect-mssql-v2`) en lugar de memoria RAM para que las sesiones sobrevivan reinicios del servidor
+- Considerar usar un almacenamiento de sesiones persistente (como `connect-pg-simple`) en lugar de memoria RAM para que las sesiones sobrevivan reinicios del servidor
 - Cambiar la contrasena del usuario `admin` inmediatamente despues del primer ingreso

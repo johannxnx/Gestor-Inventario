@@ -4,17 +4,17 @@ Este documento explica el razonamiento detras de las principales elecciones de d
 
 ---
 
-## 1. SQL Server como motor de base de datos
+## 1. PostgreSQL como motor de base de datos
 
-**Alternativas consideradas:** PostgreSQL, MySQL, SQLite
+**Alternativas consideradas:** MySQL, SQLite, SQL Server
 
-**Decision:** SQL Server
+**Decision:** PostgreSQL
 
 **Razon:**
 
-Se eligio SQL Server por familiarizacion previa con el motor y porque se adapta bien al tipo de datos del proyecto: un catalogo de productos con campos numericos (precios con decimales exactos via `DECIMAL(10,2)`) y texto estructurado.
+Se eligio PostgreSQL por ser un motor de base de datos relacional gratuito, de codigo abierto y compatible con todos los entornos donde corre el proyecto (Windows local y Ubuntu en EC2). Se adapta bien al tipo de datos del proyecto: un catalogo de productos con campos numericos (precios con decimales exactos via `DECIMAL(10,2)`) y texto estructurado.
 
-SQL Server ofrece un buen equilibrio entre facilidad de uso en entornos Windows y solidez para aplicaciones de inventario de mediana escala. SQL Server Management Studio (SSMS) tambien simplifica la administracion visual de la base de datos durante el desarrollo.
+PostgreSQL ofrece un buen equilibrio entre facilidad de uso, robustez y compatibilidad multiplataforma. pgAdmin simplifica la administracion visual de la base de datos durante el desarrollo.
 
 ---
 
@@ -67,23 +67,22 @@ Se descarto Next.js porque el proyecto no requiere SSR (Server Side Rendering) n
 
 ## 5. Consultas parametrizadas para prevenir SQL Injection
 
-**Decision:** usar `.input()` de mssql en todas las consultas
+**Decision:** usar parametros `$1`, `$2`, `$3`... del driver `pg` en todas las consultas
 
 **Razon:**
 
-Nunca se concatenan valores del usuario directamente en el SQL. En su lugar, cada valor se pasa como parametro tipado con `.input()`. Esto garantiza que aunque alguien envie codigo SQL malicioso en un campo del formulario, el driver lo trata como un valor de dato y no como parte de la consulta.
+Nunca se concatenan valores del usuario directamente en el SQL. En su lugar, cada valor se pasa como parametro posicional. Esto garantiza que aunque alguien envie codigo SQL malicioso en un campo del formulario, el driver lo trata como un valor de dato y no como parte de la consulta.
 
 **Ejemplo de lo que NO se hace:**
 ```typescript
 // INSEGURO - vulnerable a SQL Injection
-.query(`SELECT * FROM usuarios WHERE usuario = '${usuario}'`)
+pool.query(`SELECT * FROM usuarios WHERE usuario = '${usuario}'`)
 ```
 
 **Lo que SÍ se hace:**
 ```typescript
-// SEGURO - parametro tipado
-.input("usuario", sql.NVarChar(50), usuario)
-.query("SELECT * FROM usuarios WHERE usuario = @usuario")
+// SEGURO - parametro posicional
+pool.query("SELECT * FROM usuarios WHERE usuario = $1", [usuario])
 ```
 
 ---

@@ -18,7 +18,7 @@ Aplicacion web para administrar el catalogo de productos. Permite a usuarios aut
 |----------------|---------------------------------------|
 | Frontend       | React 19, TypeScript, Vite            |
 | Backend        | Node.js, Express 5, TypeScript        |
-| Base de datos  | SQL Server                            |
+| Base de datos  | PostgreSQL                            |
 | Autenticacion  | express-session, bcryptjs             |
 | HTTP Client    | Axios                                 |
 
@@ -38,7 +38,7 @@ Aplicacion web para administrar el catalogo de productos. Permite a usuarios aut
 ## Requisitos previos
 
 - Node.js v18 o superior
-- SQL Server (local o remoto)
+- PostgreSQL (local o remoto)
 
 ---
 
@@ -50,36 +50,33 @@ Crear el archivo `backend/.env`:
 
 ```env
 PORT=3001
-DB_USER=tu_usuario
-DB_PASSWORD=tu_contrasena
+DB_USER=postgres
+DB_PASSWORD=tu_contrasena_postgres
 DB_SERVER=localhost
-DB_NAME=GestorInventario
-DB_PORT=1433
+DB_NAME=gestorinventario
+DB_PORT=5432
 SESSION_SECRET=una-clave-secreta-larga
 FRONTEND_URL=http://localhost:5173
 ```
 
-### 2. Crear la base de datos en SQL Server
+### 2. Crear la base de datos en PostgreSQL
 
 ```sql
-CREATE DATABASE GestorInventario;
-USE GestorInventario;
-
 CREATE TABLE productos (
-    id          INT PRIMARY KEY IDENTITY(1,1),
+    id          SERIAL PRIMARY KEY,
     codigo      VARCHAR(50)    NOT NULL,
     nombre      VARCHAR(100)   NOT NULL,
     descripcion VARCHAR(255),
     precio      DECIMAL(10,2)  NOT NULL,
     categoria   VARCHAR(100)   NOT NULL,
-    created_at  DATETIME       DEFAULT GETDATE()
+    created_at  TIMESTAMP      DEFAULT NOW()
 );
 
 CREATE TABLE usuarios (
-    id            INT PRIMARY KEY IDENTITY(1,1),
-    usuario       NVARCHAR(50)   NOT NULL UNIQUE,
-    password_hash NVARCHAR(255)  NOT NULL,
-    created_at    DATETIME       DEFAULT GETDATE()
+    id            SERIAL PRIMARY KEY,
+    usuario       VARCHAR(50)    NOT NULL UNIQUE,
+    password_hash VARCHAR(255)   NOT NULL,
+    created_at    TIMESTAMP      DEFAULT NOW()
 );
 ```
 
@@ -122,7 +119,7 @@ Gestor-Inventario/
 ├── backend/
 │   ├── src/
 │   │   ├── controllers/    authController, productController
-│   │   ├── database/       conexion SQL Server
+│   │   ├── database/       conexion PostgreSQL (Pool)
 │   │   ├── middleware/     requireAuth
 │   │   └── routes/         authRoutes, productRoutes
 │   │   └── server.ts
